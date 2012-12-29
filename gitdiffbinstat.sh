@@ -34,11 +34,17 @@ if [ -z "${obj}" ] ; then
 fi
 
 # Check if we are actually in a git repo
-
-gitcheck=`git tag |& awk 'match($0,/fatal:\ Not\ a\ git\ repository\ /) {print substr($0,RSTART,RLENGTH)}'`
-if [ "${gitcheck}" ] ; then
+if [[ $(git rev-parse --is-inside-work-tree) != "true" ]] >& /dev/null ; then
 	echo "fatal: Not a git repository!"
 	echo "Make sure to be in a git repo!"
+	exit 1
+fi
+
+
+# Check if git can associated the input with anything usefull
+
+if [ ! `git rev-parse --quiet --verify ${obj}` ] ; then
+	echo "fatal: git could not associate '${obj}' with anything useful"
 	exit 1
 fi
 
@@ -47,8 +53,16 @@ curbranch=`git branch | awk '/^\*\ /' | sed -e 's/\*\ //'`
 # get current rev hash
 curcommit=`git rev-parse HEAD`
 # print what we compare with   git diff
-echo " ${obj} -> ${curbranch}"
-echo " ${obj} -> ${curcommit}"
+objhash=`git log -1 --format="%H" ${obj}`
+objbranch=`git symbolic-ref HEAD 2>&1`
+if [[ ! "${objbranch}" == *HEAD* ]] ; then
+	curbranch=`echo ${objbranch:11}`
+else
+	curbranch=${objhash}
+fi
+
+echo " ${curbranch} -> ${obj}"
+echo " ${curcommit} -> ${objhash}"
 
 
 # ${PWD} =directory we are currently in
@@ -83,6 +97,10 @@ fi
 gst=`git diff ${obj} --shortstat ./`
 gstins=`echo ${gst} | tr "," "\n"  | awk /insertion/ | grep -o "[0-9]*"` || gstins="0"
 gstdels=`echo ${gst} | tr "," "\n"  | awk /deletion/ | grep -o "[0-9]*"` || gstdels="0"
+# multitask hack
+echo "${gstins}" > /dev/null &
+echo "${gstdels}" > /dev/null &
+wait
 gstchval=`expr ${gstins} - ${gstdels}`
 gstchfiles=`echo ${gst} | awk '{print $1}'`
 
@@ -110,21 +128,29 @@ files=`wc -l ${diffstat} | awk '{print $1}'`
 
 
 
-
 # "Bin 0 -> x bytes" :  file has been added
 newfiles=`awk '/Bin\ 0/' ${diffstat} | wc -l`
 # "Bin x -> 0 bytes" : file has been deleted
 delfiles=`awk '/->\ 0\ bytes/' ${diffstat} | wc -l`
 # all files - new files - deleted files  = modified files
+
+# multitask hack
+echo "${old}" > /dev/null &
+echo "${new}" > /dev/null &
+echo "${files}" > /dev/null &
+echo "${newfiles}" > /dev/null &
+echo "${delfiles}" > /dev/null &
+wait
+
 binchval=`expr ${newfiles} - ${delfiles}`
 chfiles=`expr ${files} - ${binchval}`
 
 if [ "${binchval}" -gt 0 ] ; then
-	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted. (\e[033;32m+${binchval} files\e[0m)"
+	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted (\e[033;32m+${binchval} files\e[0m)"
 elif [ "${binchval}" == 0 ] ; then
-	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted. (${binchval} files)"
+	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted (${binchval} files)"
 else
-	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted. (\e[033;31m${binchval} files\e[0m)"
+	echo -e " Binary files: ${chfiles} modified, \e[033;32m${newfiles}\e[0m added, \e[033;31m${delfiles}\e[0m deleted (\e[033;31m${binchval} files\e[0m)"
 fi
 
 
@@ -201,12 +227,12 @@ if [ "${changeval}" -gt 0 ] ; then
 			changevalval=${changevalmega}
 			((changevalgiga=${changevalmega}/1024))
 			if [ ! "${changevalgiga}" == 0 ] ; then
-				changedvalunit=Gb
-				changevalval=${changvalgiga}
+				changevalunit=Gb
+				changevalval=${changevalgiga}
 			fi
 		fi
 	fi
-	echo -e " ${files} binary ${somefiles} changed, \e[033;31m${oldval}${oldunit}\e[0m -> \e[033;32m${newval}${newunit}\e[0m (\e[033;32m+${changevalval}${changevalunit}\e[0m)"
+	echo -e " ${files} binary ${somefiles} changed, \e[033;31m${oldval} ${oldunit}\e[0m -> \e[033;32m${newval} ${newunit}\e[0m (\e[033;32m+${changevalval} ${changevalunit}\e[0m)"
 
 elif [ "${changeval}" == 0 ] ; then
 
@@ -223,12 +249,12 @@ elif [ "${changeval}" == 0 ] ; then
 				changevalval=${changevalmega}
 				((changevalgiga=${changevalmega}/1024))
 				if [ ! "${changevalgiga}" == 0 ] ; then
-					changedvalunit=Gb
-					changevalval=${changvalgiga}
+					changevalunit=Gb
+					changevalval=${changevalgiga}
 				fi
 			fi
 		fi
-		echo -e " ${files} binary ${somefiles} changed, \e[033;31m${oldval}${oldunit}\e[0m -> \e[033;32m${newval}${newunit}\e[0m (${changevalval}${changevalunit})"
+		echo -e " ${files} binary ${somefiles} changed, \e[033;31m${oldval} ${oldunit}\e[0m -> \e[033;32m${newval} ${newunit}\e[0m (${changevalval} ${changevalunit})"
 	fi
 
 else
@@ -245,8 +271,8 @@ else
 			changevalval=${changevalmega}
 			((changevalgiga=${changevalmega}/1024))
 			if [ ! "${changevalgiga}" == 0 ] ; then
-				changedvalunit=Gb
-				changevalval=${changvalgiga}
+				changevalunit=Gb
+				changevalval=${changevalgiga}
 			fi
 		fi
 	fi
