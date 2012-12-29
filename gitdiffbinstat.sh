@@ -353,7 +353,7 @@ fi
 
 # how many bytes changed when
 # we added binary files
-binary_files_size_added=`cat ${diffstat} | awk '/\ *Bin3\ 0/' | awk '{ sum+=$6} END {print sum}'`
+binary_files_size_added=`cat ${diffstat} | awk '/\ *Bin\ 0/' | awk '{ sum+=$6} END {print sum}'`
 if [ -z "$binary_files_size_added" ] ; then
 	binary_files_size_added=0
 else
