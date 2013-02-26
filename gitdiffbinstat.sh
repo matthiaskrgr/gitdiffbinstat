@@ -160,8 +160,8 @@ else
 	fi
 fi
 
-echo " ${curbranch} -> ${obj}"
-echo " ${curcommit} -> ${objhash}"
+echo " ${curbranch}..${obj}"
+echo " ${curcommit}..${objhash}"
 
 
 # ${PWD} = directory we are currently in
