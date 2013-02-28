@@ -117,6 +117,7 @@ if [[ "${obj}" = *\.\.\.* ]] ; then
 	echo "fatal: \"${obj}\" not yet supported by gitdiffbinstat, sorry."
 	exit 3
 elif [[ "${obj}" = *\.\.* ]] ; then
+	obj_real="${obj}"
 	# get current branch
 	curbranch=`echo ${obj} | sed -e 's/\.\./\t/' | cut -f1`
 	# get current object
@@ -137,6 +138,7 @@ elif [[ "${obj}" = *\.\.* ]] ; then
 	objbranch=`git symbolic-ref ${obj} 2>&1`
 	objhash=`git log -1 --format="%H" ${obj}`
 else
+	obj_real="${obj}"
 	if [ ! `git rev-parse --quiet --verify ${obj}` ] ; then
 		echo "fatal: git could not associate '${obj}' with anything useful"
 		exit 3
@@ -180,7 +182,7 @@ printf " Recursively getting stat for path \"${dir}\" from repo root"
 
 
 # get the actuall diff we are going to process
-git diff ${obj} --stat ./ > ${diffstat} ; printf .
+git diff ${obj_real} --stat ./ > ${diffstat} ; printf .
 
 
 
@@ -194,9 +196,9 @@ if [ "${checksum}" == "0" ] ; then
 fi
 
 # get the remaining diffs...
-git diff ${obj} -M100% -l999999 --stat=1000,2000 --diff-filter="R" ./  | awk '/>/' > ${diffstat_renames} ; printf . &
-git diff ${obj} -M100% -l999999 --stat=1000,2000 --diff-filter="A|M|D" ./  > ${diffstat_adds_dels_mods} ; printf . &
-git diff ${obj} -M100% --diff-filter="M" --stat  | awk '/\ *Bin/' > ${diffstat_M100_awkbin} ; printf . &
+git diff ${obj_real} -M100% -l999999 --stat=1000,2000 --diff-filter="R" ./  | awk '/>/' > ${diffstat_renames} ; printf . &
+git diff ${obj_real} -M100% -l999999 --stat=1000,2000 --diff-filter="A|M|D" ./  > ${diffstat_adds_dels_mods} ; printf . &
+git diff ${obj_real} -M100% --diff-filter="M" --stat  | awk '/\ *Bin/' > ${diffstat_M100_awkbin} ; printf . &
 cat ${diffstat} | awk '/\ \|\ *Bin\ /' > ${diffstat_awkbin} ; printf . &
 wait
 printf "\n"
