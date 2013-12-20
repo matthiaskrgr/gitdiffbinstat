@@ -212,7 +212,7 @@ fi
 # get the remaining diffs...
 git diff ${obj_real} -M100% -l999999 --stat=1000,2000 --diff-filter="R" ./  | awk '/>/' > ${diffstat_renames} ; printf . &
 git diff ${obj_real} -l999999 --stat=1000,2000 --diff-filter="D" ./ | awk '/>/' > ${diffstat_renames_workaround_dels} ; printf . &
-git diff ${obj_real} -M100% -l999999 --stat=1000,2000 --diff-filter="A|M|D" ./  > ${diffstat_adds_dels_mods} ; printf . &
+git diff ${obj_real} -M100% -l999999 --stat=1000,2000 --diff-filter="AMD" ./  > ${diffstat_adds_dels_mods} ; printf . &
 git diff ${obj_real} -M100% --diff-filter="M" --stat  | awk '/\ *Bin/' > ${diffstat_M100_awkbin} ; printf . &
 cat ${diffstat} | awk '/\ \|\ *Bin\ /' > ${diffstat_awkbin} ; printf . &
 wait
