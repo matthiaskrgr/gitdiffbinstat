@@ -382,6 +382,7 @@ if  [ "${binary_files_renamed_amount}" != "0" ] ; then  # yes, we did
 	for i in `cat ${diffstat_renames} | sed -e 's/{//' -e 's/\ =>.*}//' | awk '{print $1}' | sed s@//@/@i ` ; do # this hack is neccessary since git diff ${obj}  -M100% -l999999  --stat=1000,2000 --diff-filter="R"   does no longer show file size
 		cat ${diffstat_renames_workaround_dels} | grep "${i}"
 	done | awk '{ sum+=$4} END {print sum}' > ${diffstat_file_move_rm_workaround}
+	workaround_tmpfile = true
 	binary_files_renamed_size_before=`cat ${diffstat_file_move_rm_workaround} `
 
 	binary_files_renamed_size_after=$binary_files_renamed_size_before
@@ -466,4 +467,7 @@ echo -e "    file modifications: ${RED}${binary_files_size_changed_before} b${NC
 echo -e "    / ==>  [${binary_files_added_removed__changed_before_after__ratio}]"
 
 # remove the diffstat, we don't need it anymore
-rm ${diffstat} ${diffstat_renames} ${diffstat_adds_dels_mods} ${diffstat_awkbin} ${diffstat_M100_awkbin} ${diffstat_renames_workaround_dels} ${diffstat_file_move_rm_workaround}
+rm ${diffstat} ${diffstat_renames} ${diffstat_adds_dels_mods} ${diffstat_awkbin} ${diffstat_M100_awkbin} ${diffstat_renames_workaround_dels}
+if [ ${workaround_tmpfile} ] ; then # avoid failure removing that this file if it does not exist
+	rm  ${diffstat_file_move_rm_workaround}
+fi
