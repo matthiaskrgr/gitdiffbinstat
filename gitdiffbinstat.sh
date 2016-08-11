@@ -130,12 +130,12 @@ if [[ "${obj}" = *\.\.\.* ]] ; then
 		exit 3
 	fi
 
-elif [[ "${obj}" = *\.\.* ]] ; then
+elif [[ "${obj}" = *\.\.* ]] ; then # foo..bar
 	obj_real="${obj}"
 	# get current branch
-	curbranch=`echo ${obj} | sed -e 's/\.\./\t/' | cut -f1`
+	curbranch=`echo ${obj} | sed -e 's/\.\./\t/' | cut -f1` # foo
 	# get current object
-	obj=`echo ${obj} | sed -e 's/\.\./\t/' | cut -f2`
+	obj=`echo ${obj} | sed -e 's/\.\./\t/' | cut -f2` # bar
 	# get curent commit hash
 	curcommit=`git rev-parse ${curbranch}`
 

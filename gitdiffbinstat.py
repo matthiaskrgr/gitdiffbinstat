@@ -17,9 +17,95 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA  02110-1301 USA
 
+__author__ = 'Matthias "matthiaskrgr" Krüger'
+
 
 import sys
 if (sys.version_info.major != 3): # no python 3
 	print("Python 3 or higher is required.")
 	sys.exit(1)
 
+import locale # locale.setlocale
+import argparse #argument parsing
+import subprocess # calling git stuff
+from subprocess import *
+
+def color(string, color):
+	# returns colored string
+	END = "\[0m" # resets color
+	if (color == "red"):
+		string = "\033[31m" + string
+	elif (color == "green"):
+		string = "\[033;32m" + string
+	elif (color == "greenul"):
+		string = "\[4;32m" + string
+	elif (color == "whiteul"):
+		string = "\[4;02m" + string
+# reset color
+	return string + END
+
+assert(color("hi", "red") == "\033[31mhi\[0m")
+assert(color("foo", "whiteul") + color("baz", "greenul") == "\[4;02mfoo\[0m\[4;32mbaz\[0m")
+
+locale.setlocale(locale.LC_ALL, 'en_GB') # set locale (export LANG=C)
+
+
+def print_fatal(text):
+	# prints to stderr and exits program
+	sys.stderr.write(text + "\n")
+	sys.exit(1)
+
+# @TODO: make sure we find git executable
+
+
+def check_cmd_exitstatus_is_false(cmd):
+	# @param cmd string
+	proc = Popen(cmd, stderr=STDOUT, stdout=DEVNULL, shell=True)
+	proc.communicate()
+	return True if (proc.returncode != 0) else False # ternary op
+
+
+def assert_inside_git_repo():
+	if (check_cmd_exitstatus_is_false("git rev-parse --is-inside-work-tree")):
+		print_fatal("ERROR: not inside git repository")
+
+
+def assert_arg_is_known_by_git(gitobj):
+	if (check_cmd_exitstatus_is_false("git rev-parse --quiet --verify " + gitobj)):
+		print_fatal("ERROR: '" + gitobj + "' is not known to git.")
+
+def get_git_hash_from_obj(gitobj):
+	assert_arg_is_known_by_git(gitobj)
+	proc = subprocess.Popen("git log -1 --format=%H " + gitobj, stdout=subprocess.PIPE, shell=True).stdout.read().decode('utf8')
+	return proc
+
+assert_inside_git_repo()
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("gitobj", help="a branch, or a arange of commits (commit1..commit2)", metavar='<commit/tag/branch/commit range>', nargs=1, type=str)
+args = parser.parse_args()
+GITOBJ = args.gitobj[0]
+
+#assert_arg_is_known_by_git(GITOBJ)
+
+
+# split up the arg, if needed
+ARG1=None
+ARG2=None
+if ("..." in GITOBJ):
+	ARG1 = GITOBJ.split("...")[0]
+	ARG2 = GITOBJ.split("...")[1]
+elif (".." in GITOBJ):
+	ARG1 = GITOBJ.split("..")[0]
+	ARG2 = GITOBJ.split("..")[1]
+else:  # assume we diff HEAD against something
+	ARG1 = GITOBJ
+
+assert_arg_is_known_by_git(ARG1)
+if (ARG2):
+	assert_arg_is_known_by_git(ARG2)
+
+print("gitobj: " +  GITOBJ)
+print("HERE")
+print(get_git_hash_from_obj(GITOBJ))
