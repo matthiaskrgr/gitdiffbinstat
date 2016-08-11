@@ -76,8 +76,8 @@ def assert_arg_is_known_by_git(gitobj):
 
 def get_git_hash_from_obj(gitobj):
 	assert_arg_is_known_by_git(gitobj)
-	proc = subprocess.Popen("git log -1 --format=%H " + gitobj, stdout=subprocess.PIPE, shell=True).stdout.read().decode('utf8')
-	return proc
+	hash_ = subprocess.Popen("git log -1 --format=%H " + gitobj, stdout=subprocess.PIPE, shell=True).stdout.read().decode('utf8')
+	return hash_.rstrip('\n') # remove newline
 
 assert_inside_git_repo()
 
@@ -91,21 +91,27 @@ GITOBJ = args.gitobj[0]
 
 
 # split up the arg, if needed
-ARG1=None
-ARG2=None
+arg1=None
+arg2=None
 if ("..." in GITOBJ):
-	ARG1 = GITOBJ.split("...")[0]
-	ARG2 = GITOBJ.split("...")[1]
+	arg1 = GITOBJ.split("...")[0]
+	arg2 = GITOBJ.split("...")[1]
 elif (".." in GITOBJ):
-	ARG1 = GITOBJ.split("..")[0]
-	ARG2 = GITOBJ.split("..")[1]
+	arg1 = GITOBJ.split("..")[0]
+	arg2 = GITOBJ.split("..")[1]
 else:  # assume we diff HEAD against something
-	ARG1 = GITOBJ
+	arg1 = GITOBJ
 
-assert_arg_is_known_by_git(ARG1)
-if (ARG2):
-	assert_arg_is_known_by_git(ARG2)
+if (not arg2): # we need to get the HEAD
+	arg2="HEAD"
 
-print("gitobj: " +  GITOBJ)
-print("HERE")
-print(get_git_hash_from_obj(GITOBJ))
+assert_arg_is_known_by_git(arg1)
+assert_arg_is_known_by_git(arg2)
+
+CURBRANCH = arg1
+OBJ = arg2
+CURCOMMIT=get_git_hash_from_obj(arg1)
+OBJHASH=get_git_hash_from_obj(arg2)
+
+print(CURBRANCH + ".." + OBJ)
+print(CURCOMMIT + ".." + OBJHASH)
