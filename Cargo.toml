@@ -1,0 +1,6 @@
+[package]
+name = "gitdiffbinstat"
+version = "0.1.0"
+authors = ["Matthias Krüger <matthias.krueger@famsik.de>"]
+
+[dependencies]
