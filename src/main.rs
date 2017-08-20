@@ -43,7 +43,16 @@ fn main() {
         Err(e) => panic!("Not inside a git repo: {}", e),
     };
 
+    // get the input commit
+    let basecommit = "rust";
+    let compare_against = "abf184d48c6230989e5d574a5588f079cd075a35";
 
+    let basecommit = repo.revparse_single(basecommit);
+    let compare_against = repo.revparse_single(compare_against);
+
+    //let mut diffoptions = git2::DiffOptions::new();
+
+    let diff = repo.diff_index_to_index(&(basecommit.unwrap()), &compare_against.unwrap(), None);
  
 }
 
