@@ -1,12 +1,10 @@
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
+
 
 // execute with      cargo run --features "clippy"
 
 extern crate git2;
-use std::env;  // arg parsing
-use git2::Repository; // libgit
-
+use git2::Repository;
+use std::env; // arg parsing // libgit
 
 fn help() {
     println!("Usage: 'gitdiffbinstat [<commit/branch/tag/HEAD>]'");
@@ -20,10 +18,10 @@ fn fatal_exit(msg: &str) {
 }
 
 fn main() {
-
     let args: Vec<String> = env::args().collect();
 
-    if args.len() == 2  { // one arg passed
+    if args.len() == 2 {
+        // one arg passed
         println!("arg passed");
     } else {
         let msg = "no args passed".to_string();
@@ -44,16 +42,20 @@ fn main() {
     };
 
     // get the input commit
-    let basecommit = "rust";
-    let compare_against = "abf184d48c6230989e5d574a5588f079cd075a35";
+    let basecommit = "HEAD";
+    let compare_against = "7e1f3bc27fe168a54655b9443349d0d1d6394084";
 
     let basecommit = repo.revparse_single(basecommit);
     let compare_against = repo.revparse_single(compare_against);
 
-    //let mut diffoptions = git2::DiffOptions::new();
+    //std::process::exit();
+    let tree1 = basecommit.unwrap().peel_to_tree().ok();
+    let tree2 = compare_against.unwrap().peel_to_tree().ok();
 
-    let diff = repo.diff_index_to_index(&(basecommit.unwrap()), &compare_against.unwrap(), None);
- 
+    dbg!((&tree1, &tree2));
+
+    let diff = repo.diff_tree_to_tree(tree1.as_ref(), tree2.as_ref(), None);
+
+    let diffstat = diff.unwrap().stats();
+    dbg!(diffstat);
 }
-
-

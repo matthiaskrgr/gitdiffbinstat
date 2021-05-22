@@ -1,11 +1,10 @@
 [package]
+authors = ["Matthias Krüger <matthias.krueger@famsik.de>"]
 name = "gitdiffbinstat"
 version = "0.1.0"
-authors = ["Matthias Krüger <matthias.krueger@famsik.de>"]
 
 [dependencies]
-git2 = "0.6.6"
-clippy = {version = "*", optional = true}
+git2 = "0.12"
 
 [features]
 default = []
