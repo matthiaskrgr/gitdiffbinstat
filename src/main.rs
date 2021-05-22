@@ -1,5 +1,3 @@
-
-
 // execute with      cargo run --features "clippy"
 
 extern crate git2;
@@ -52,10 +50,27 @@ fn main() {
     let tree1 = basecommit.unwrap().peel_to_tree().ok();
     let tree2 = compare_against.unwrap().peel_to_tree().ok();
 
-    dbg!((&tree1, &tree2));
+    //   dbg!((&tree1, &tree2));
 
     let diff = repo.diff_tree_to_tree(tree1.as_ref(), tree2.as_ref(), None);
 
-    let diffstat = diff.unwrap().stats();
-    dbg!(diffstat);
+    let diffstat = diff.unwrap().stats().unwrap();
+    //dbg!(diffstat);
+
+    let mut diffstatsoptions = git2::DiffStatsFormat::all();
+
+    // let stats = diffstats.to_buf();
+
+    println!(
+        "{} files changed: \n{} insertions\n{} deletions",
+        diffstat.files_changed(),
+        diffstat.insertions(),
+        diffstat.deletions()
+    );
 }
+
+// https://docs.rs/git2/0.12.0/git2/enum.DiffFormat.html name status
+
+// https://docs.rs/git2/0.12.0/git2/struct.DiffStatsFormat.html  // diff --shortstat
+
+fn bin_diff_info(repo: &Repository, base: &str, target: &str) {}
