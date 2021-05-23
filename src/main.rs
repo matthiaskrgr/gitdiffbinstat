@@ -16,12 +16,31 @@ fn fatal_exit(msg: &str) {
     std::process::exit(1);
 }
 
-type GitObject = String;
+type GitObject<'repo> = git2::Object<'repo>;
 
-#[derive(Debug, Clone)]
-struct GitRange {
-    base: GitObject,
-    other: GitObject,
+struct GitRange<'repo> {
+    base_original: String,
+    other_original: String,
+    base: GitObject<'repo>,
+    other: GitObject<'repo>,
+}
+
+impl<'repo> std::fmt::Display for GitRange<'repo> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        /*  let repo = match Repository::init(env::current_dir().unwrap()) {
+            Ok(repo) => repo,
+            Err(e) => panic!("Not inside a git repo: {}", e),
+        }; */
+
+        let base_hash = self.base.id();
+        let other_hash = self.other.id();
+
+        write!(
+            f,
+            "{}..{}\n{}..{}",
+            self.base_original, self.other_original, base_hash, other_hash,
+        )
+    }
 }
 
 struct Stats {
@@ -40,7 +59,7 @@ impl std::fmt::Display for Stats {
     }
 }
 
-fn argument_handling() -> GitRange {
+fn argument_handling<'repo>(repo: &'repo git2::Repository) -> GitRange<'repo> {
     let mut args = env::args();
 
     // get the argument
@@ -54,15 +73,21 @@ fn argument_handling() -> GitRange {
         }
     };
 
+    let base_original = "HEAD".into();
+    let other_original = other.clone();
+
+    let base = repo.revparse_single("HEAD").unwrap();
+    let other = repo.revparse_single(&other).unwrap();
+
     GitRange {
-        base: String::from("HEAD"),
+        base_original,
+        other_original,
+        base,
         other,
     }
 }
 
 fn main() {
-    let gitobject: GitRange = dbg!(argument_handling());
-
     // get string of cwd path
     let cwd = env::current_dir().unwrap();
     let full_path_string = cwd.join(""); // use full_pat_string.display() for print
@@ -75,12 +100,12 @@ fn main() {
         Err(e) => panic!("Not inside a git repo: {}", e),
     };
 
-    let basecommit = repo.revparse_single(&gitobject.base);
-    let compare_against = repo.revparse_single(&gitobject.other);
+    let commit_range: GitRange = argument_handling(&repo);
 
+    println!("{}", commit_range);
     //std::process::exit();
-    let tree1 = basecommit.unwrap().peel_to_tree().ok();
-    let tree2 = compare_against.unwrap().peel_to_tree().ok();
+    let tree1 = commit_range.base.peel_to_tree().ok();
+    let tree2 = commit_range.other.peel_to_tree().ok();
 
     assert!(tree1.is_some());
     assert!(tree2.is_some());
