@@ -24,6 +24,22 @@ struct GitRange {
     other: GitObject,
 }
 
+struct Stats {
+    total_files_changed: usize,
+    lines_added: usize,
+    lines_deleted: usize,
+}
+
+impl std::fmt::Display for Stats {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} files changed: \n{} insertions\n{} deletions",
+            self.total_files_changed, self.lines_added, self.lines_deleted,
+        )
+    }
+}
+
 fn argument_handling() -> GitRange {
     let mut args = env::args();
 
@@ -66,23 +82,25 @@ fn main() {
     let tree1 = basecommit.unwrap().peel_to_tree().ok();
     let tree2 = compare_against.unwrap().peel_to_tree().ok();
 
-    //   dbg!((&tree1, &tree2));
+    assert!(tree1.is_some());
+    assert!(tree2.is_some());
 
     let diff = repo.diff_tree_to_tree(tree1.as_ref(), tree2.as_ref(), None);
 
     let diffstat = diff.unwrap().stats().unwrap();
     //dbg!(diffstat);
 
-    let mut diffstatsoptions = git2::DiffStatsFormat::all();
+    let diffstatsoptions = git2::DiffStatsFormat::all();
 
     // let stats = diffstats.to_buf();
 
-    println!(
-        "{} files changed: \n{} insertions\n{} deletions",
-        diffstat.files_changed(),
-        diffstat.insertions(),
-        diffstat.deletions()
-    );
+    let final_stats: Stats = Stats {
+        total_files_changed: diffstat.files_changed(),
+        lines_added: diffstat.insertions(),
+        lines_deleted: diffstat.deletions(),
+    };
+
+    println!("{}", final_stats);
 }
 
 // https://docs.rs/git2/0.12.0/git2/enum.DiffFormat.html name status
