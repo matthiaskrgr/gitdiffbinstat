@@ -10,23 +10,33 @@ fn help() {
 }
 
 fn fatal_exit(msg: &str) {
-    println!("Error:");
-    println!("{}", msg);
-    panic!("bla");
+    println!("Error: '{}'", msg);
+
+    help();
+    std::process::exit(1);
+}
+
+type GitObject = String;
+fn argument_handling() -> GitObject {
+    let mut args = env::args();
+
+    // get the argument
+    let obj = args.nth(1);
+
+    let obj = match obj {
+        Some(obj) => obj,
+        None => {
+            fatal_exit("Need exactly one argument!");
+            unreachable!();
+        }
+    };
+
+    obj as GitObject
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let gitobject: GitObject = argument_handling();
 
-    if args.len() == 2 {
-        // one arg passed
-        println!("arg passed");
-    } else {
-        let msg = "no args passed".to_string();
-        fatal_exit(&msg);
-    }
-
-    help();
     // get string of cwd path
     let cwd = env::current_dir().unwrap();
     let full_path_string = cwd.join(""); // use full_pat_string.display() for print
@@ -41,7 +51,7 @@ fn main() {
 
     // get the input commit
     let basecommit = "HEAD";
-    let compare_against = "7e1f3bc27fe168a54655b9443349d0d1d6394084";
+    let compare_against = "affb15fbac2c50dfdc4869253c07f299c13cd15c";
 
     let basecommit = repo.revparse_single(basecommit);
     let compare_against = repo.revparse_single(compare_against);
