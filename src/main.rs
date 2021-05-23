@@ -61,12 +61,13 @@ impl std::fmt::Display for Stats {
         } else {
             '-'
         };
-
         writeln!(
             f,
-            "{} text files changed: {} insertions(+), {} deletions(-) => {}{} ",
+            "  {} text files changed: {} insertions(+), {} deletions(-) => {}{} lines",
             self.text_files_changed, self.lines_added, self.lines_deleted, sign, lines_difference
-        )
+        )?;
+        // binary files changes
+        writeln!(f, "  {} binary files changed: ", self.binary_files_changed)
     }
 }
 
