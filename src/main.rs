@@ -1,8 +1,7 @@
 // execute with      cargo run --features "clippy"
 
 use git2::Repository;
-use regex;
-use std::env; // arg parsing // libgit
+use std::env; // get args
 
 fn help() {
     println!("Usage: 'gitdiffbinstat [<commit/branch/tag/HEAD>]'");
@@ -153,5 +152,3 @@ fn main() {
 // https://docs.rs/git2/0.12.0/git2/enum.DiffFormat.html name status
 
 // https://docs.rs/git2/0.12.0/git2/struct.DiffStatsFormat.html  // diff --shortstat
-
-fn bin_diff_info(repo: &Repository, base: &str, target: &str) {}
