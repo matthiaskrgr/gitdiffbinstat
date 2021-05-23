@@ -59,7 +59,7 @@ impl std::fmt::Display for Stats {
         let sign = if lines_difference.is_positive() {
             '+'
         } else {
-            '-'
+            ' '
         };
         writeln!(
             f,
