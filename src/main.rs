@@ -52,18 +52,20 @@ struct Stats {
 
 impl std::fmt::Display for Stats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
+        // global summary
+        writeln!(f, "{} files changed in total", self.total_files_changed)?;
+        // text files changes
+        let lines_difference: i64 = self.lines_added as i64 - self.lines_deleted as i64;
+        let sign = if lines_difference.is_positive() {
+            '+'
+        } else {
+            '-'
+        };
+
+        writeln!(
             f,
-            "{total_files_changed} files changed in total
-  {text_files_changed} text files changed: {total_lines_added} insertions(+), {total_lines_deleted} deletions(-) => {total_lines_sign}{total_lines_diff}\n
-            {binary_files_changed} binary files changed\n {text_files_changed} text files changed",
-            total_files_changed = self.total_files_changed,
-            total_lines_added = self.lines_added,
-            total_lines_deleted = self.lines_deleted,
-            total_lines_diff = self.lines_added - self.lines_deleted,
-            total_lines_sign =  "+", // FIXME
-            binary_files_changed = self.binary_files_changed,
-            text_files_changed = self.text_files_changed,
+            "{} text files changed: {} insertions(+), {} deletions(-) => {}{} ",
+            self.text_files_changed, self.lines_added, self.lines_deleted, sign, lines_difference
         )
     }
 }
