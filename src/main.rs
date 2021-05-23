@@ -1,7 +1,7 @@
 // execute with      cargo run --features "clippy"
 
-extern crate git2;
 use git2::Repository;
+use regex;
 use std::env; // arg parsing // libgit
 
 fn help() {
@@ -45,6 +45,8 @@ impl<'repo> std::fmt::Display for GitRange<'repo> {
 
 struct Stats {
     total_files_changed: usize,
+    binary_files_changed: usize,
+    text_files_changed: usize,
     lines_added: usize,
     lines_deleted: usize,
 }
@@ -53,8 +55,9 @@ impl std::fmt::Display for Stats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} files changed in total\nText files:\n{} insertions\n{} deletions",
-            self.total_files_changed, self.lines_added, self.lines_deleted,
+            "{total_files_changed} files changed in total\nText files:\n{total_lines_added} insertions\n{total_lines_deleted} deletions\n
+            {binary_files_changed} binary files changed\n {text_files_changed} text files changed",
+            total_files_changed = self.total_files_changed, total_lines_added =  self.lines_added, total_lines_deleted = self.lines_deleted, binary_files_changed = self.binary_files_changed, text_files_changed = self.text_files_changed,
         )
     }
 }
@@ -111,17 +114,35 @@ fn main() {
     assert!(tree1.is_some());
     assert!(tree2.is_some());
 
+    // diff between commits
     let diff = repo.diff_tree_to_tree(tree1.as_ref(), tree2.as_ref(), None);
 
+    // get the diffstat
     let diffstat = diff.unwrap().stats().unwrap();
-    //dbg!(diffstat);
 
-    let diffstatsoptions = git2::DiffStatsFormat::all();
+    let diffstatsoptions = git2::DiffStatsFormat::FULL;
+
+    //get diffstat --stats
+    let stats_full = diffstat
+        .to_buf(diffstatsoptions, usize::MAX)
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // get the numer of binray files
+    let regex_binfiles = regex::Regex::new(r".* \|.* Bin .* -> .* bytes").unwrap();
+    let number_of_binary_files_changed = stats_full
+        .lines()
+        .filter(|line| regex_binfiles.is_match(line))
+        .count();
 
     // let stats = diffstats.to_buf();
 
     let final_stats: Stats = Stats {
         total_files_changed: diffstat.files_changed(),
+        text_files_changed: diffstat.files_changed() - number_of_binary_files_changed,
+        binary_files_changed: number_of_binary_files_changed,
         lines_added: diffstat.insertions(),
         lines_deleted: diffstat.deletions(),
     };

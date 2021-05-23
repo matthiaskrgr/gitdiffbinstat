@@ -1,10 +1,12 @@
 [package]
 authors = ["Matthias Krüger <matthias.krueger@famsik.de>"]
+edition = "2018"
 name = "gitdiffbinstat"
 version = "0.1.0"
 
 [dependencies]
 git2 = "0.12"
+regex = "1.5"
 
 [features]
 default = []
