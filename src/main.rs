@@ -17,25 +17,35 @@ fn fatal_exit(msg: &str) {
 }
 
 type GitObject = String;
-fn argument_handling() -> GitObject {
+
+#[derive(Debug, Clone)]
+struct GitRange {
+    base: GitObject,
+    other: GitObject,
+}
+
+fn argument_handling() -> GitRange {
     let mut args = env::args();
 
     // get the argument
-    let obj = args.nth(1);
+    let other = args.nth(1);
 
-    let obj = match obj {
-        Some(obj) => obj,
+    let other = match other {
+        Some(other) => other,
         None => {
             fatal_exit("Need exactly one argument!");
             unreachable!();
         }
     };
 
-    obj as GitObject
+    GitRange {
+        base: String::from("HEAD"),
+        other,
+    }
 }
 
 fn main() {
-    let gitobject: GitObject = argument_handling();
+    let gitobject: GitRange = dbg!(argument_handling());
 
     // get string of cwd path
     let cwd = env::current_dir().unwrap();
@@ -49,12 +59,8 @@ fn main() {
         Err(e) => panic!("Not inside a git repo: {}", e),
     };
 
-    // get the input commit
-    let basecommit = "HEAD";
-    let compare_against = "affb15fbac2c50dfdc4869253c07f299c13cd15c";
-
-    let basecommit = repo.revparse_single(basecommit);
-    let compare_against = repo.revparse_single(compare_against);
+    let basecommit = repo.revparse_single(&gitobject.base);
+    let compare_against = repo.revparse_single(&gitobject.other);
 
     //std::process::exit();
     let tree1 = basecommit.unwrap().peel_to_tree().ok();
