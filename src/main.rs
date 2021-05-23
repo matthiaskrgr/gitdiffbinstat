@@ -48,6 +48,8 @@ struct Stats {
     text_files_changed: usize,
     lines_added: usize,
     lines_deleted: usize,
+    total_bytes_added: usize,
+    total_bytes_removed: usize,
 }
 
 impl std::fmt::Display for Stats {
@@ -67,7 +69,21 @@ impl std::fmt::Display for Stats {
             self.text_files_changed, self.lines_added, self.lines_deleted, sign, lines_difference
         )?;
         // binary files changes
-        writeln!(f, "  {} binary files changed: ", self.binary_files_changed)
+        let bytes_difference: i64 = self.total_bytes_added as i64 - self.total_bytes_removed as i64;
+        let sign = if bytes_difference.is_positive() {
+            '+'
+        } else {
+            ' '
+        };
+        writeln!(
+            f,
+            "  {} binary files changed: {} bytes added(+), {} bytes removed(-) => {}{} bytes",
+            self.binary_files_changed,
+            self.total_bytes_added,
+            self.total_bytes_removed,
+            sign,
+            bytes_difference
+        )
     }
 }
 
@@ -146,14 +162,54 @@ fn main() {
         .filter(|line| regex_binfiles.is_match(line))
         .count();
 
-    // let stats = diffstats.to_buf();
+    // binary size stats
+    let all_binary_changes = stats_full
+        .lines()
+        .filter(|line| regex_binfiles.is_match(line))
+        .collect::<Vec<_>>();
+
+    /*
+
+
+     maps/darkzone.map            | 899 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++----------------------------------------------------------------------------------
+     maps/darkzone.map.options    |   2 +-
+     maps/drain.jpg               | Bin 157550 -> 30937 bytes
+
+
+    */
+    //  maps/drain.jpg               | Bin 157550 -> 30937 bytes
+    // get the first number: split whitespaces and get 3rd item from behind
+    //dbg!(&all_binary_changes);
+    let total_size_added = all_binary_changes
+        .iter()
+        .map(|line| {
+            line.split_whitespace()
+                .nth_back(3)
+                .unwrap()
+                .parse::<usize>()
+                .unwrap()
+        })
+        .sum::<usize>();
+
+    let total_size_removed = all_binary_changes
+        .iter()
+        .map(|line| {
+            line.split_whitespace()
+                .nth_back(1)
+                .unwrap()
+                .parse::<usize>()
+                .unwrap()
+        })
+        .sum::<usize>();
 
     let final_stats: Stats = Stats {
         total_files_changed: diffstat.files_changed(),
         text_files_changed: diffstat.files_changed() - number_of_binary_files_changed,
-        binary_files_changed: number_of_binary_files_changed,
         lines_added: diffstat.insertions(),
         lines_deleted: diffstat.deletions(),
+        binary_files_changed: number_of_binary_files_changed,
+        total_bytes_added: total_size_added,
+        total_bytes_removed: total_size_removed,
     };
 
     println!("{}", final_stats);
