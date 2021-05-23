@@ -53,7 +53,7 @@ impl std::fmt::Display for Stats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} files changed: \n{} insertions\n{} deletions",
+            "{} files changed in total\nText files:\n{} insertions\n{} deletions",
             self.total_files_changed, self.lines_added, self.lines_deleted,
         )
     }
@@ -103,9 +103,10 @@ fn main() {
     let commit_range: GitRange = argument_handling(&repo);
 
     println!("{}", commit_range);
+
     //std::process::exit();
-    let tree1 = commit_range.base.peel_to_tree().ok();
-    let tree2 = commit_range.other.peel_to_tree().ok();
+    let tree1 = commit_range.other.peel_to_tree().ok();
+    let tree2 = commit_range.base.peel_to_tree().ok();
 
     assert!(tree1.is_some());
     assert!(tree2.is_some());
